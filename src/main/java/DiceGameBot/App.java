@@ -1,5 +1,7 @@
 package DiceGameBot;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.telegram.telegrambots.ApiContextInitializer;
 import org.telegram.telegrambots.meta.TelegramBotsApi;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiRequestException;
@@ -8,14 +10,21 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiRequestException;
  * Zonk game bot
  */
 public class App {
-    public static void main(String[] args) {
+    static final Logger loggerGameInfo = LoggerFactory.getLogger("infoFileLog");
+    static final Logger loggerWarn = LoggerFactory.getLogger("warnFileLog");
+
+    public static void main( String[] args )
+    {
         ApiContextInitializer.init();
         TelegramBotsApi telegramBotsApi = new TelegramBotsApi();
         Bot bot = new Bot();
+        loggerGameInfo.info("Log started");
+        loggerWarn.info("Log started");
         try {
             telegramBotsApi.registerBot(bot);
+            loggerGameInfo.info("Bot launched");
         } catch (TelegramApiRequestException e) {
-            e.printStackTrace();
+            loggerWarn.error("Connection failed", e);
         }
 
         MessageProcess messageQueue = new MessageProcess(bot);
@@ -30,7 +39,5 @@ public class App {
         callbackReceiver.setDaemon(true);
         callbackReceiver.setName("CallbackProcessing");
         callbackReceiver.start();
-
-
     }
 }

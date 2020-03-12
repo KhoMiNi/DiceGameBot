@@ -13,6 +13,8 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 public class Bot extends TelegramLongPollingBot {
     private String botName = "Bot name"; //bot name
     private String botToken = "Bot token";  // bot token
+
+
     Map<Long, Game> games = new HashMap<>();
     final Queue<Message> processQueue = new ConcurrentLinkedQueue<>();
     final Queue<CallbackQuery> processCallbackQueue = new ConcurrentLinkedQueue<>();

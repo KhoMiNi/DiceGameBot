@@ -45,8 +45,7 @@ public class MessageProcess implements Runnable {
                 try {
                     processMessage(message);
                 } catch (Exception e) {
-                    //add log.
-                    e.printStackTrace();
+                    App.loggerWarn.error("Message queue error", e);
                 }
             }
             Thread.yield();
@@ -65,8 +64,7 @@ public class MessageProcess implements Runnable {
         try {
             chatMember = bot.execute(new GetChatMember().setChatId(chatId).setUserId(message.getFrom().getId()));
         } catch (TelegramApiException e) {
-            //add log
-            e.printStackTrace();
+            App.loggerWarn.error("Get chatMember at  " + chatId, e);
         }
 
         if (command.length >= 2) {
@@ -75,21 +73,21 @@ public class MessageProcess implements Runnable {
 
         switch (command[0]) {
             case ("/start@ZonkGamebot"):
+            case ("/start@TestDiceGamebot"):
             case ("/Zonk"):
                 if (currentGame.isGameOver() && currentGame.users.isEmpty()) {
                     try {
                         currentGame.actualMessage = bot.execute(currentGame.menu.startMenu());
-                        //add log
+                        App.loggerGameInfo.info("Game launched at " + chatId);
                     } catch (TelegramApiException e) {
-                        e.printStackTrace();
+                        App.loggerWarn.error("Start game error at " + chatId, e);
                     }
                 } else {
                     try {
                         bot.execute(new SendMessage().setChatId(chatId).setText("Already launched"));
                         currentGame.actualMessage = bot.execute(new SendMessage().setChatId(chatId).setText(currentGame.actualMessage.getText()).setReplyMarkup(currentGame.actualMessage.getReplyMarkup()));
-                        //add log
                     } catch (TelegramApiException e) {
-                        e.printStackTrace();
+                        App.loggerWarn.error("Start game error at " + chatId, e);
                     }
 
                 }
@@ -105,7 +103,7 @@ public class MessageProcess implements Runnable {
                 try {
                     bot.execute(new SendMessage().setChatId(chatId).setText(rulesText));
                 } catch (TelegramApiException e) {
-                    e.printStackTrace();
+                    App.loggerWarn.error("Rules command at " + chatId, e);
                 }
                 break;
             case ("/exitzonk"):
@@ -126,7 +124,7 @@ public class MessageProcess implements Runnable {
                             try {
                                 bot.execute(new SendMessage().setChatId(chatId).setText("Not in game"));
                             } catch (TelegramApiException e) {
-                                e.printStackTrace();
+                                App.loggerWarn.error("Remove player at " + chatId, e);
                             }
                         }
 
@@ -135,7 +133,6 @@ public class MessageProcess implements Runnable {
                 }
                 break;
             default:
-                //add log
                 break;
         }
     }
@@ -144,26 +141,27 @@ public class MessageProcess implements Runnable {
         if (currentGame.isGameOver()) {
             try {
                 currentGame.gameOver();
-                //add log
+                App.loggerGameInfo.info("Try to reset game at " + currentGame.getChatId());
                 bot.execute(new SendMessage().setChatId(currentGame.getChatId()).setText("There is nothing to reset, but ok"));
                 currentGame.actualMessage = bot.execute(currentGame.menu.startMenu());
             } catch (TelegramApiException e) {
-                e.printStackTrace();
+                App.loggerWarn.error("Game reset error", e);
             }
         } else {
             try {
                 currentGame.gameOver();
-                //add log
+                App.loggerGameInfo.info("Game reset at " + currentGame.getChatId());
                 bot.execute(new SendMessage().setChatId(currentGame.getChatId()).setText("This game is no more!"));
                 currentGame.actualMessage = bot.execute(currentGame.menu.startMenu());
             } catch (TelegramApiException e) {
-                e.printStackTrace();
+                App.loggerWarn.error("Game reset error", e);
             }
 
         }
     }
 
     private void removePlayer(Game currentGame, User user) {
+        if(currentGame.getPlayers().size()< currentGame.users.size()) return;
         currentGame.surrender(user);
         if (currentGame.isGameOver()) {
             try {
@@ -171,14 +169,14 @@ public class MessageProcess implements Runnable {
                 bot.execute(new SendMessage().setChatId(currentGame.getChatId()).setText(currentGame.getGameOverText()));
                 currentGame.actualMessage = bot.execute(currentGame.menu.startMenu());
             } catch (TelegramApiException e) {
-                e.printStackTrace();
+                App.loggerWarn.error("Remove player error", e);
             }
         } else if (user.equals(currentGame.getCurrentPlayer().getUser())) {
             try {
                 currentGame.nextPlayer();
                 currentGame.actualMessage = bot.execute(currentGame.menu.turnMenu());
             } catch (TelegramApiException e) {
-                e.printStackTrace();
+                App.loggerWarn.error("Remove player error", e);
             }
         }
     }

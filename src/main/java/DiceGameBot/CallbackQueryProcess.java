@@ -20,7 +20,7 @@ public class CallbackQueryProcess implements Runnable {
                 try {
                     processCallbackQuery(callbackQuery);
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    App.loggerWarn.error("Callback query process error", e);
                 }
             }
             Thread.yield();
@@ -44,7 +44,7 @@ public class CallbackQueryProcess implements Runnable {
         if (answer.equals("Start Game")) {
             if (currentGame.users.size() > 1) {
                 currentGame.setPlayersList();
-                //add log
+                App.loggerGameInfo.info("Game started at " + chatId + " with " + currentGame.users.size() + " players");
                 recreateTurnMenu(currentGame, chatId, messageId);
             }
         }
@@ -66,7 +66,7 @@ public class CallbackQueryProcess implements Runnable {
                 currentGame.bankAction();
                 if (currentGame.isGameOver()) {
                     createEndMenu(currentGame, chatId, messageId);
-                    //add log
+                    App.loggerGameInfo.info("Game finished at " + chatId);
                 } else {
                     recreateTurnMenu(currentGame, chatId, messageId);
                 }
@@ -84,7 +84,7 @@ public class CallbackQueryProcess implements Runnable {
                     currentGame.takeAll();
                     bot.execute(currentGame.menu.turnMenu(messageId));
                 } catch (TelegramApiException e) {
-                    e.printStackTrace();
+                    App.loggerWarn.error("Turn menu error", e);
                 }
                 break;
             case "0":
@@ -100,12 +100,11 @@ public class CallbackQueryProcess implements Runnable {
                 try {
                     bot.execute(currentGame.menu.turnMenu(messageId));
                 } catch (TelegramApiException e) {
-                    e.printStackTrace();
+                    App.loggerWarn.error("Turn menu error", e);
                 }
                 break;
 
             default:
-                //add log
                 break;
         }
 
@@ -115,7 +114,7 @@ public class CallbackQueryProcess implements Runnable {
         try {
             bot.execute(currentGame.menu.rollMenu(messageId));
         } catch (TelegramApiException e) {
-            e.printStackTrace();
+            App.loggerWarn.error("Roll menu error", e);
         }
     }
 
@@ -137,7 +136,7 @@ public class CallbackQueryProcess implements Runnable {
                 currentGame.actualMessage = bot.execute(currentGame.menu.turnMenu());
             }
         } catch (TelegramApiException e) {
-            e.printStackTrace();
+            App.loggerWarn.error("Turn menu error", e);
         }
     }
 
@@ -147,7 +146,7 @@ public class CallbackQueryProcess implements Runnable {
                 currentGame.actualMessage = bot.execute(currentGame.menu.startMenu());
             }
         } catch (TelegramApiException e) {
-            e.printStackTrace();
+            App.loggerWarn.error("Start menu error", e);
         }
     }
 
@@ -158,7 +157,7 @@ public class CallbackQueryProcess implements Runnable {
                 currentGame.actualMessage = bot.execute(currentGame.menu.startMenu());
             }
         } catch (TelegramApiException e) {
-            e.printStackTrace();
+            App.loggerWarn.error("End menu error", e);
         }
     }
 

@@ -44,9 +44,9 @@ class Menu {
     SendMessage startMenu() {
         String text = "Welcome to Zonk. Tap join to create new game.";
         if (currentGame.users.size() > 0) {
-            String userlist = "";
+            StringBuilder userlist = new StringBuilder();
             for (User user : currentGame.users) {
-                userlist = userlist + "\n" + user.getFirstName();
+                userlist.append("\n").append(user.getFirstName());
             }
             text = "Welcome to Zonk." + userlist + "\n" + currentGame.users.size() + " players ready.\nJoin or start new game.";
         }
@@ -77,9 +77,9 @@ class Menu {
         this.numDiceInHand = 6 - currentGame.getCurrentPlayer().getNumDiceInUse();
         String turnPointsList = "";
         if (currentGame.getPlayers().size() > 0) {
-            String userlist = "";
+            StringBuilder userlist = new StringBuilder();
             for (Player player : currentGame.getPlayers()) {
-                userlist = userlist + "\n" + player.getName() + "'s points: " + player.getPlayerScore();
+                userlist.append("\n").append(player.getName()).append("'s points: ").append(player.getPlayerScore());
             }
             turnPointsList = userlist + "\n";
         }
@@ -96,9 +96,9 @@ class Menu {
         this.numDiceInHand = 6 - currentGame.getCurrentPlayer().getNumDiceInUse();
         String turnPointsList = "";
         if (currentGame.getPlayers().size() > 0) {
-            String userlist = "";
+            StringBuilder userlist = new StringBuilder();
             for (Player player : currentGame.getPlayers()) {
-                userlist = userlist + "\n" + player.getName() + "'s points: " + player.getPlayerScore();
+                userlist.append("\n").append(player.getName()).append("'s points: ").append(player.getPlayerScore());
             }
             turnPointsList = userlist + "\n";
         }

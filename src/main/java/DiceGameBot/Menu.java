@@ -1,6 +1,5 @@
 package DiceGameBot;
 
-import DiceGameBot.configuration.EnglishText;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
 import org.telegram.telegrambots.meta.api.objects.User;
@@ -30,9 +29,9 @@ class Menu {
         InlineKeyboardButton inlineStartMenuButton1 = new InlineKeyboardButton();
         InlineKeyboardButton inlineStartMenuButton2 = new InlineKeyboardButton();
         inlineStartMenuButton1.setText("Join Game");
-        inlineStartMenuButton1.setCallbackData(EnglishText.JOIN_GAME);
+        inlineStartMenuButton1.setCallbackData("Join Game");
         inlineStartMenuButton2.setText("Start Game");
-        inlineStartMenuButton2.setCallbackData(EnglishText.START_GAME);
+        inlineStartMenuButton2.setCallbackData("Start Game");
         List<InlineKeyboardButton> keyboardButtonsRow1 = new ArrayList<>();
         keyboardButtonsRow1.add(inlineStartMenuButton1);
         keyboardButtonsRow1.add(inlineStartMenuButton2);
@@ -44,12 +43,12 @@ class Menu {
 
     SendMessage startMenu() {
         String text = "Welcome to Zonk. Tap join to create new game.";
-        if (currentGame.getUsers().size() > 0) {
+        if (currentGame.users.size() > 0) {
             StringBuilder userlist = new StringBuilder();
-            for (User user : currentGame.getUsers()) {
+            for (User user : currentGame.users) {
                 userlist.append("\n").append(user.getFirstName());
             }
-            text = "Welcome to Zonk." + userlist + "\n" + currentGame.getUsers().size() + " players ready.\nJoin or start new game.";
+            text = "Welcome to Zonk." + userlist + "\n" + currentGame.users.size() + " players ready.\nJoin or start new game.";
         }
         return new SendMessage().setChatId(currentGame.getChatId()).setText(text).setReplyMarkup(createStartMenu());
     }
@@ -59,11 +58,11 @@ class Menu {
         InlineKeyboardButton inlineTurnMenuButton1 = new InlineKeyboardButton();
         InlineKeyboardButton inlineTurnMenuButton2 = new InlineKeyboardButton();
         inlineTurnMenuButton1.setText("Roll dice");
-        inlineTurnMenuButton1.setCallbackData(EnglishText.ROLL_DICE);
+        inlineTurnMenuButton1.setCallbackData("Roll dice");
         List<InlineKeyboardButton> keyboardButtonsRow1 = new ArrayList<>();
         keyboardButtonsRow1.add(inlineTurnMenuButton1);
         inlineTurnMenuButton2.setText("Save points and end turn");
-        inlineTurnMenuButton2.setCallbackData(EnglishText.BANK);
+        inlineTurnMenuButton2.setCallbackData("Bank");
         List<InlineKeyboardButton> keyboardButtonsRow2 = new ArrayList<>();
         keyboardButtonsRow2.add(inlineTurnMenuButton2);
         List<List<InlineKeyboardButton>> rowList = new ArrayList<>();
@@ -121,7 +120,7 @@ class Menu {
         inlineRollMenuButton1.setCallbackData(this.rollMenuCallBack);
         if (this.rollMenuCheck) {
             inlineRollMenuButton1.setText("Continue turn");
-            inlineRollMenuButton1.setCallbackData(EnglishText.KEEP_ROLL);
+            inlineRollMenuButton1.setCallbackData("KeepRoll");
         }
         List<InlineKeyboardButton> keyboardButtonsRow1 = new ArrayList<>();
         keyboardButtonsRow1.add(inlineRollMenuButton1);

@@ -1,6 +1,5 @@
 package DiceGameBot;
 
-import DiceGameBot.configuration.EnglishText;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.User;
 
@@ -8,20 +7,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 class Game {
-    private int winScore;
-    private final long chatId;
-    private Message actualMessage;
-    private Menu menu;
-    private boolean gameOver;
-    private String gameOverText;
-    private Player currentPlayer;
-    private final HashMap<String, User> userIdMap;
-    private final ArrayList<Player> players;
-    private ArrayList<User> users;
-    private int index;
-    private int surrendered;
-    private final Dices dices;
-
     ArrayList<Player> getPlayers() {
         return this.players;
     }
@@ -42,6 +27,18 @@ class Game {
         return this.currentPlayer;
     }
 
+    private long chatId;
+    Message actualMessage;
+    Menu menu;
+    private boolean gameOver;
+    private String gameOverText;
+    private Player currentPlayer;
+    private HashMap<String, User> userIdMap;
+    private ArrayList<Player> players;
+    ArrayList<User> users;
+    private int index, surrendered;
+    private Dices dices;
+
     Dices getDices() {
         return this.dices;
     }
@@ -61,29 +58,20 @@ class Game {
     }
 
     void bankAction() {
-        currentPlayer.bankScore();
-        checkWin();
-    }
-
-    private void checkWin() {
-        if (isWin()) {
-            gameOver(String.format(EnglishText.WINNER_MESSAGE, currentPlayer.getName(),currentPlayer.getPlayerScore()));
-        } else if (isLastPlayer()) {
-            gameOver(String.format(EnglishText.WINNER_AS_LAST, currentPlayer.getName()));
+        int turnScore = currentPlayer.getTurnScore();
+        currentPlayer.setPlayerScore(turnScore);
+        if (currentPlayer.getPlayerScore() >= 10000) { //Winscore should be replaced by variable
+            this.gameOverText = currentPlayer.getName() + " won the game with " + currentPlayer.getPlayerScore() + " points!";
+            gameOver();
+        } else if (this.surrendered == (this.players.size() - 1)) {
+            this.gameOverText = currentPlayer.getName() + " won the game as the last player!";
+            gameOver();
         } else {
             nextPlayer();
         }
     }
 
-    private boolean isLastPlayer() {
-        return this.surrendered == (this.players.size() - 1);
-    }
-
-    private boolean isWin() {
-        return currentPlayer.getPlayerScore() >= this.winScore;
-    }
-
-    //RENAME IT!
+    //////RENAME IT!
     void gameOver() {
         this.users.clear();
         this.players.clear();
@@ -92,19 +80,11 @@ class Game {
         this.gameOver = true;
     }
 
-    void gameOver(String text) {
-        this.gameOverText = text;
-        gameOver();
-    }
-
+    ////////////////////////////////////////////////////////
     void nextPlayer() {
-        currentPlayer.resetPlayerTurn();
-        findNextPlayer();
-    }
-
-    private void findNextPlayer() {
         this.index++;
         if (this.index >= players.size()) this.index = 0;
+        currentPlayer.resetPlayerTurn();
         currentPlayer = players.get(this.index);
         if (!(currentPlayer.isInGame())) nextPlayer();  //It shouldn't be a problem but add check
     }
@@ -115,18 +95,20 @@ class Game {
 
         //Move it to menu class?
         this.menu.rollMenuText = dices.rollResult + dices.rollText;
-        this.menu.rollMenuCallBack = EnglishText.TAKE_ALL;
-        this.menu.rollMenuCallBackText = EnglishText.TAKE_ALL;
+        this.menu.rollMenuCallBack = "Take All";
+        this.menu.rollMenuCallBackText = "Take All";
         if (dices.zonk) {
-            this.menu.rollMenuCallBack = EnglishText.END_TURN;
-            this.menu.rollMenuCallBackText = EnglishText.END_TURN;
+            this.menu.rollMenuCallBack = "End Turn";
+            this.menu.rollMenuCallBackText = "End Turn";
         }
+        //
+
     }
 
     void setPlayersList() {
         this.players.clear();
         this.index = 0;
-        this.users.forEach(n -> this.players.add(new Player(n)));
+        this.users.forEach((n) -> this.players.add(new Player(n)));
         currentPlayer = players.get(this.index);
         this.gameOver = false;
     }
@@ -136,13 +118,13 @@ class Game {
         userIdMap.put(user.getUserName(), user);
     }
 
-    //ADD index check. Should be 0-4
+    ////ADD index check. Should be 0-4
     void take(int index) {
         this.menu.rollMenuCheck = true;
         currentPlayer.setTurnScore(dices.diceRollCounts.get(index).points);
         currentPlayer.setNumDiceInUse(dices.diceRollCounts.get(index).indices.size());
         dices.diceRollCounts.remove(dices.diceRollCounts.get(index));
-        this.menu.rollMenuText = String.format(EnglishText.CURRENT_SCORE, currentPlayer.getName(), currentPlayer.getTurnScore());
+        this.menu.rollMenuText = currentPlayer.getName() + "'s current score for this turn: " + currentPlayer.getTurnScore();
         if (currentPlayer.getNumDiceInUse() >= 6) currentPlayer.resetNumDiceInUse();
     }
 
@@ -156,26 +138,14 @@ class Game {
     }
 
     void surrender(User from) {
-        int userIndex = this.users.indexOf(from);
-        if (this.players.get(userIndex).isInGame()) {
-            this.players.get(userIndex).setInGame(false);
+        int index = this.users.indexOf(from);
+        if (this.players.get(index).isInGame()) {
+            this.players.get(index).setInGame(false);
             this.surrendered++;
-            checkNoPlayers();
-        }
-    }
-
-    private void checkNoPlayers() {
-        if (this.surrendered >= this.players.size()) {
-            gameOver(EnglishText.NO_PLAYERS);
-        }
-    }
-
-    public void setWinScore(String s) {
-        try {
-            int score = Integer.parseInt(s.trim());
-            if (score >= 5000 && score <= 50000) this.winScore = score;
-        }catch (NumberFormatException e){
-            this.winScore = 10000;
+            if (this.surrendered >= this.players.size()) {
+                gameOver();
+                this.gameOverText = "There is no players";
+            }
         }
     }
 
@@ -183,25 +153,5 @@ class Game {
         return userIdMap.get(username);
     }
 
-    public int getWinScore() {
-        return winScore;
-    }
 
-    public int getActualMessageId(){return actualMessage.getMessageId();}
-
-    public ArrayList<User> getUsers() {
-        return users;
-    }
-
-    public Menu getMenu() {
-        return menu;
-    }
-
-    public void setActualMessage(Message actualMessage) {
-        this.actualMessage = actualMessage;
-    }
-
-    public Message getActualMessage() {
-        return actualMessage;
-    }
 }

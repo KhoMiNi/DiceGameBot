@@ -1,5 +1,6 @@
 package DiceGameBot;
 
+import DiceGameBot.configuration.Constants;
 import org.telegram.telegrambots.meta.api.objects.User;
 
 
@@ -11,7 +12,6 @@ class Player {
     private int turnScore;
     private int numDiceInUse;
     private boolean inGame;
-
 
     Player(User user) {
         this.user = user;
@@ -26,7 +26,6 @@ class Player {
         return playerName;
     }
 
-
     void setPlayerScore(int score) {
         playerScore = playerScore + score;
     }
@@ -39,7 +38,7 @@ class Player {
         turnScore = turnScore + score;
     }
 
-    int getTurnScore() {
+    Integer getTurnScore() {
         return turnScore;
     }
 
@@ -74,5 +73,9 @@ class Player {
 
     void setInGame(boolean inGame) {
         this.inGame = inGame;
+    }
+
+    void bankScore(){
+        playerScore = playerScore + turnScore;
     }
 }

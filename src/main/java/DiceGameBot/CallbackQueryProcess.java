@@ -1,5 +1,6 @@
 package DiceGameBot;
 
+import DiceGameBot.configuration.EnglishText;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage;
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
@@ -20,7 +21,7 @@ public class CallbackQueryProcess implements Runnable {
                 try {
                     processCallbackQuery(callbackQuery);
                 } catch (Exception e) {
-                    App.loggerWarn.error("Callback query process error", e);
+                    App.loggerWarn.error(EnglishText.ERROR_CALLBACK, e);
                 }
             }
             Thread.yield();
@@ -32,92 +33,125 @@ public class CallbackQueryProcess implements Runnable {
         String answer = callbackQuery.getData();
         int messageId = callbackQuery.getMessage().getMessageId();
         Game currentGame = bot.games.get(chatId);
-
-
         /* Check message. Ignore if not actual message*/
-        if (messageId != currentGame.actualMessage.getMessageId()) {
+        if (messageId != currentGame.getActualMessageId()) {
             return;
         }
-
-
         /* Add new player and start game buttons */
-        if (answer.equals("Start Game")) {
-            if (currentGame.users.size() > 1) {
-                currentGame.setPlayersList();
-                App.loggerGameInfo.info("Game started at " + chatId + " with " + currentGame.users.size() + " players");
-                recreateTurnMenu(currentGame, chatId, messageId);
-            }
-        }
-        if (answer.equals("Join Game")) {
-            if (!currentGame.users.contains(callbackQuery.getFrom())) {
-                currentGame.addUser(callbackQuery.getFrom());
-                recreateStartMenu(currentGame, chatId, messageId);
-            }
-        }
-
+        checkStartJoin(callbackQuery);
         /*Check player actions. Ignore if not current player*/
         if (!checkTurn(callbackQuery)) {
             return;
         }
         /*Process player actions */
-
         switch (answer) {
-            case "Bank":
-                currentGame.bankAction();
-                if (currentGame.isGameOver()) {
-                    createEndMenu(currentGame, chatId, messageId);
-                    App.loggerGameInfo.info("Game finished at " + chatId);
-                } else {
-                    recreateTurnMenu(currentGame, chatId, messageId);
-                }
+            case EnglishText.BANK:
+                answerBank(currentGame, chatId, messageId);
                 break;
-            case "End Turn":
-                currentGame.nextPlayer();
-                recreateTurnMenu(currentGame, chatId, messageId);
+            case EnglishText.END_TURN:
+                answerEndTurn(currentGame, chatId, messageId);
                 break;
-            case "Roll dice":
-                currentGame.rollAction();
-                editRollMenu(currentGame, messageId);
+            case EnglishText.ROLL_DICE:
+                answerRollDice(currentGame, messageId);
                 break;
-            case "Take All":
-                try {
-                    currentGame.takeAll();
-                    bot.execute(currentGame.menu.turnMenu(messageId));
-                } catch (TelegramApiException e) {
-                    App.loggerWarn.error("Turn menu error", e);
-                }
+            case EnglishText.TAKE_ALL:
+                answerTakeAll(currentGame, messageId);
                 break;
             case "0":
             case "1":
             case "2":
             case "3":
             case "4":
-                int index = Integer.parseInt(answer);
-                currentGame.take(index);
-                editRollMenu(currentGame, messageId);
+                answerTake(answer,currentGame, messageId);
                 break;
-            case "KeepRoll":
-                try {
-                    bot.execute(currentGame.menu.turnMenu(messageId));
-                } catch (TelegramApiException e) {
-                    App.loggerWarn.error("Turn menu error", e);
-                }
+            case EnglishText.KEEP_ROLL:
+                answerKeepRoll(currentGame, messageId);
                 break;
-
             default:
                 break;
         }
 
     }
 
-    private void editRollMenu(Game currentGame, int messageId) {
+    private void answerKeepRoll(Game currentGame, int messageId) {
         try {
-            bot.execute(currentGame.menu.rollMenu(messageId));
+            bot.execute(currentGame.getMenu().turnMenu(messageId));
         } catch (TelegramApiException e) {
-            App.loggerWarn.error("Roll menu error", e);
+            App.loggerWarn.error(EnglishText.ERROR_TURNMENU, e);
         }
     }
 
+    private void answerTake(String answer, Game currentGame, int messageId) {
+        int index = Integer.parseInt(answer);
+        currentGame.take(index);
+        editRollMenu(currentGame, messageId);
+    }
+
+    private void answerTakeAll(Game currentGame, int messageId) {
+        try {
+            currentGame.takeAll();
+            bot.execute(currentGame.getMenu().turnMenu(messageId));
+        } catch (TelegramApiException e) {
+            App.loggerWarn.error(EnglishText.ERROR_TURNMENU, e);
+        }
+    }
+
+    private void answerRollDice(Game currentGame, int messageId) {
+        currentGame.rollAction();
+        editRollMenu(currentGame, messageId);
+    }
+
+    private void answerEndTurn(Game currentGame, Long chatId, int messageId) {
+        currentGame.nextPlayer();
+        recreateTurnMenu(currentGame, chatId, messageId);
+    }
+
+    private void answerBank(Game currentGame, Long chatId, int messageId) {
+        currentGame.bankAction();
+        if (currentGame.isGameOver()) {
+            createEndMenu(currentGame, chatId, messageId);
+        } else {
+            recreateTurnMenu(currentGame, chatId, messageId);
+        }
+    }
+
+    private void checkStartJoin(CallbackQuery callbackQuery) {
+        Long chatId = callbackQuery.getMessage().getChatId();
+        String answer = callbackQuery.getData();
+        int messageId = callbackQuery.getMessage().getMessageId();
+        Game currentGame = bot.games.get(chatId);
+        switch (answer){
+            case EnglishText.START_GAME:
+                startGame(currentGame, chatId, messageId);
+                break;
+            case EnglishText.JOIN_GAME:
+                joinGame(currentGame, chatId, messageId, callbackQuery);
+                break;
+            default:
+        }
+    }
+
+    private void joinGame(Game currentGame, Long chatId, int messageId, CallbackQuery callbackQuery) {
+        if (!currentGame.getUsers().contains(callbackQuery.getFrom())) {
+            currentGame.addUser(callbackQuery.getFrom());
+            recreateStartMenu(currentGame, chatId, messageId);
+        }
+    }
+
+    private void startGame(Game currentGame, Long chatId, int messageId) {
+        if (currentGame.getUsers().size() > 1) {
+            currentGame.setPlayersList();
+            recreateTurnMenu(currentGame, chatId, messageId);
+        }
+    }
+
+    private void editRollMenu(Game currentGame, int messageId) {
+        try {
+            bot.execute(currentGame.getMenu().rollMenu(messageId));
+        } catch (TelegramApiException e) {
+            App.loggerWarn.error(EnglishText.ERROR_ROLLMENU, e);
+        }
+    }
 
     private boolean checkTurn(CallbackQuery callbackQuery) {
         boolean check = false;
@@ -132,33 +166,36 @@ public class CallbackQueryProcess implements Runnable {
 
     private void recreateTurnMenu(Game currentGame, Long chatId, int messageId) {
         try {
-            if (bot.execute(new DeleteMessage(chatId, messageId))) {
-                currentGame.actualMessage = bot.execute(currentGame.menu.turnMenu());
+            if (isSuccessfullyDeleted(chatId, messageId)) {
+                currentGame.setActualMessage(bot.execute(currentGame.getMenu().turnMenu()));
             }
         } catch (TelegramApiException e) {
-            App.loggerWarn.error("Turn menu error", e);
+            App.loggerWarn.error(EnglishText.ERROR_TURNMENU, e);
         }
     }
 
     private void recreateStartMenu(Game currentGame, Long chatId, int messageId) {
         try {
-            if (bot.execute(new DeleteMessage(chatId, messageId))) {
-                currentGame.actualMessage = bot.execute(currentGame.menu.startMenu());
+            if (isSuccessfullyDeleted(chatId, messageId)) {
+                currentGame.setActualMessage(bot.execute(currentGame.getMenu().startMenu()));
             }
         } catch (TelegramApiException e) {
-            App.loggerWarn.error("Start menu error", e);
+            App.loggerWarn.error(EnglishText.ERROR_STARTMENU, e);
         }
     }
 
     private void createEndMenu(Game currentGame, Long chatId, int messageId) {
         try {
-            if (bot.execute(new DeleteMessage(chatId, messageId))) {
+            if (isSuccessfullyDeleted(chatId, messageId)) {
                 bot.execute(new SendMessage().setChatId(chatId).setText(currentGame.getGameOverText()));
-                currentGame.actualMessage = bot.execute(currentGame.menu.startMenu());
+                currentGame.setActualMessage(bot.execute(currentGame.getMenu().startMenu()));
             }
         } catch (TelegramApiException e) {
-            App.loggerWarn.error("End menu error", e);
+            App.loggerWarn.error(EnglishText.ERROR_ENDMENU, e);
         }
     }
 
+    private boolean isSuccessfullyDeleted(Long chatId, int messageId) throws TelegramApiException {
+        return bot.execute(new DeleteMessage(chatId, messageId));
+    }
 }
